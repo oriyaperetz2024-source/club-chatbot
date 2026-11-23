@@ -1,0 +1,31 @@
+# Environment files
+.env
+.env.*
+*.env
+
+# Secrets, API keys, and database credentials
+secrets/
+credentials/
+secrets.*
+credentials.*
+api_key*
+api-key*
+db_credentials*
+db-credentials*
+database_credentials*
+database-credentials*
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Temporary and generated local files
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*~
+__pycache__/
+.ipynb_checkpoints/
+.venv/
