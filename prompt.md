@@ -33,7 +33,7 @@ Build a `StateGraph(State)` with exactly one node named `chatbot` and exactly th
 
 For each accepted message, invoke the graph once with a single new `HumanMessage` using the active thread's config. Within `chatbot`, construct a fresh `SystemMessage` from `state["topic"]`, prepend it to the messages passed to the model, and make exactly one model call. Disable automatic model retries for this exercise. Return only the new `AIMessage` in the node's `messages` update. Keep the `SystemMessage` out of graph inputs, node updates, database history, and the chat display. Avoid a separate classifier, router, tool loop, or follow-up model call.
 
-Instruct the model to answer within the current club and politely decline unrelated questions with a brief invitation to ask about that club. The active topic governs every turn, including follow-ups that refer to earlier conversation history. After a switch from Astronomy to Cooking, a question about stars must receive a Cooking-specific refusal even if the thread previously covered astronomy. For mixed requests, limit the answer to the portion relevant to the current topic.
+Instruct the model to answer within the current club and politely decline unrelated questions. When another supported club fits, suggest that club without switching automatically. Otherwise, invite a question about the current club. The active topic governs every turn, including follow-ups that refer to earlier conversation history. For mixed requests, limit the answer to the portion relevant to the current topic.
 
 ## PostgreSQL persistence
 
@@ -59,14 +59,16 @@ Use `gr.Blocks` with a club dropdown, a `gr.Chatbot` chat window, a message text
 
 Display `graph.get_graph().draw_mermaid_png()` in a dedicated notebook cell using IPython display. Verify that the diagram shows only `START → chatbot → END`.
 
-Provide a standalone graph test cell after graph compilation and before the Gradio interface. Invoke the compiled graph directly with an isolated test thread, display the question, active club, and response for each test, and check relevance or refusal without matching exact model wording. Use the four official homework questions in their assigned order when available. The handout was not supplied with the specification, so the following are provisional examples to replace with the lecturer's wording.
+Provide a standalone graph test cell after graph compilation and before the Gradio interface. Use `config = {"configurable": {"thread_id": "test-1"}}` for all four calls. Reserve `test-1` for this test and exclude it from the UI selector. The `ask(question, topic)` helper must apply the specified topic on the same thread and invoke the compiled graph directly with a fresh user message. Display the question, active club, and response. Check the behavior described in the comments without matching exact response wording.
 
-| Order | Active club | Sample question | Expected behavior |
-| --- | --- | --- | --- |
-| 1 | Astronomy | Why does the Moon have phases? | Explain the phases. |
-| 2 | Astronomy | How do I make pancakes? | Politely decline and invite an astronomy question. |
-| 3 | Cooking | How do I make pancakes? | Answer after switching to Cooking on the same thread. |
-| 4 | Cooking | Why does the Moon have phases? | Politely decline even though the same thread previously covered the Moon. |
+```python
+ask("How do I make pancakes?", "Cooking") # answers
+ask("Who won the 2022 World Cup?", "Cooking") # refuses, suggests the Football club
+ask("Who won the 2022 World Cup?", "Football") # answers
+ask("And how long do I fry each pancake?", "Football") # refuses: old topic
+```
+
+Starting with a fresh `test-1` thread, verify that `graph.get_state(config).values` contains exactly eight messages (four human and four assistant) and that `topic == "Football"`. Run the same four calls again with the same configuration and verify that the state now contains exactly 16 messages and still has `topic == "Football"`. Preserve the checkpoint between runs. Use fresh message IDs so `add_messages` appends each turn even when the text repeats.
 
 Run these additional acceptance checks in Colab.
 
